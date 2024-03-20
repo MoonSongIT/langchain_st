@@ -41,8 +41,10 @@ def main():
         process = st.button("Process")
     if process:
         if not openai_api_key:
-            st.info("Please add your OpenAI API key to continue.")
-            st.stop()
+            openai_api_key = st.secrets["OpenAI_Key"]
+            if not openai_api_key:
+                st.info("Please add your OpenAI API key to continue.")
+                st.stop()
         files_text = get_text(uploaded_files)
         text_chunks = get_text_chunks(files_text)
         vetorestore = get_vectorstore(text_chunks)
