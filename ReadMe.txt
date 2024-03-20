@@ -3,6 +3,8 @@
 conda create --name langchain_st
 conda activate langchain_st
 
+## share.streamlit.io 에서 app을 등록 한다
+
 ## Git init and remote connection
 # PC에 git-scm.com에서 Git Download & install
 >>> git init  
