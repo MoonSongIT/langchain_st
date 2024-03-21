@@ -1,4 +1,5 @@
-pysqlite3-binary
+# pysqlite3-binary
+langchain-community
 langchain
 chromadb
 unstructured
