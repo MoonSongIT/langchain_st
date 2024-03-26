@@ -4,6 +4,7 @@ from loguru import logger
 
 from langchain.chains import ConversationalRetrievalChain
 from langchain_community.chat_models import ChatOpenAI
+# from langchain_openai import ChatOpenAI
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.document_loaders import Docx2txtLoader
@@ -63,7 +64,9 @@ def main():
                 st.info("Please add your OpenAI API key to continue.")
                 st.stop()
         files_text = get_text(uploaded_files)
-        print(files_text)
+        
+        display_document_page(files_text)
+
         text_chunks = get_text_chunks(files_text, chunk_size, chunk_overlap)
         vetorestore = get_vectorstore(text_chunks,device_option)
      
@@ -109,6 +112,23 @@ def main():
 
 # Add assistant message to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
+def display_document_page(documents):
+    # 사용자가 볼 페이지 번호를 선택할 수 있게 합니다.
+    # page_number = st.sidebar.selectbox(
+    #     "Choose the page number:",
+    #     options=range(len(documents)),  # 0부터 문서 수 - 1까지의 번호
+    #     format_func=lambda x: f"Page {x + 1}"  # 페이지 번호를 좀 더 친절하게 표시
+    # )
+    
+    # 선택된 페이지의 내용을 보여줍니다.
+    for i in range(len(documents)):
+        doc = str(documents[i])
+        start = doc.find("page_content=") + len("page_content=") +2 
+        end = doc.find("metadata=") -2
+        extracted_content = doc[start:end]
+        # st.write(extracted_content)
+        extracted_content = extracted_content.replace('\n','<br>')
+        st.markdown(extracted_content,unsafe_allow_html=True)
 
 def tiktoken_len(text):
     tokenizer = tiktoken.get_encoding("cl100k_base")
