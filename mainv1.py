@@ -37,12 +37,14 @@ def main():
         st.session_state.processComplete = None
 
     with st.sidebar:
-        uploaded_files =  st.file_uploader("Upload your file",type=['pdf','docx'],accept_multiple_files=True)
-        openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
-
-        # Streamlit 사이드바에 슬라이더 추가
-        chunk_size = st.sidebar.slider("Chunk Size", min_value=100, max_value=2000, value=900, step=50)
-        chunk_overlap = st.sidebar.slider("Chunk Overlap", min_value=50, max_value=500, value=100, step=10)
+        with st.expander("참조할 지시정보",expanded=True):            
+            uploaded_files =  st.file_uploader("Upload your file",type=['pdf','docx'],accept_multiple_files=True)
+        with st.sidebar.expander("API Key",expanded=False):            
+            # Streamlit 사이드바에 슬라이더 추가
+            openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
+        with st.sidebar.expander("Chunk ....",expanded=False):            
+            chunk_size = st.slider("Chunk Size", min_value=100, max_value=2000, value=900, step=50)
+            chunk_overlap = st.slider("Chunk Overlap", min_value=50, max_value=500, value=100, step=10)
         # Streamlit 사이드바 콤보박스 추가
         device_option = st.sidebar.selectbox(
             "Choose the device for the model",
@@ -55,8 +57,9 @@ def main():
             options=['gpt-3.5-turbo', 'gpt-3', 'gpt-4','davinci-codex', 'curie'],  # 사용 가능한 모델 이름들
             index=0  # 'gpt-3.5-turbo'를 기본값으로 설정
         )
-
-        process = st.button("Process")
+        # 파일이 업로드 되었는지 확인하고 버튼의 활성화 상태 결정
+        button_enabled = uploaded_files is not None and len(uploaded_files) > 0
+        process = st.button("Process....", disabled=not button_enabled)
     if process:
         if not openai_api_key:
             openai_api_key = st.secrets["OpenAI_Key"]
@@ -112,23 +115,39 @@ def main():
 
 # Add assistant message to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
-def display_document_page(documents):
-    # 사용자가 볼 페이지 번호를 선택할 수 있게 합니다.
-    # page_number = st.sidebar.selectbox(
-    #     "Choose the page number:",
-    #     options=range(len(documents)),  # 0부터 문서 수 - 1까지의 번호
-    #     format_func=lambda x: f"Page {x + 1}"  # 페이지 번호를 좀 더 친절하게 표시
-    # )
-    
-    # 선택된 페이지의 내용을 보여줍니다.
+def display_document_page(documents):   
+    first_source = '' 
     for i in range(len(documents)):
         doc = str(documents[i])
+        print('='*100)
+        print(doc)
+        print('='*100)
+
         start = doc.find("page_content=") + len("page_content=") +2 
         end = doc.find("metadata=") -2
         extracted_content = doc[start:end]
         # st.write(extracted_content)
-        extracted_content = extracted_content.replace('\n','<br>')
+        extracted_content = extracted_content.replace('\\n','<br>')
+
+        # metadata 시작 부분을 찾습니다
+        start = doc.find("metadata=") + len("metadata=")
+        # metadata 종료 부분을 찾습니다 (이 경우, 마지막 괄호 전까지)
+        end = doc.rfind("}")+ 1
+        # metadata 문자열을 추출합니다
+        metadata_str = doc[start:end]
+        # metadata 문자열을 딕셔너리로 변환합니다
+        # 주의: 실제 코드에서는 더 견고한 파싱 방법을 사용해야 할 수도 있습니다.
+        print(f'start={start},end ={end} ,{metadata_str}')
+        import ast
+        metadata = ast.literal_eval(metadata_str)
+        # metadata에서 'source'와 'page' 정보를 추출합니다
+        source = metadata['source']
+        page = metadata['page']
+        if first_source != source:
+            st.subheader('source:'+ source)
+            first_source = source
         st.markdown(extracted_content,unsafe_allow_html=True)
+        st.caption('page No:'+ str(page))
 
 def tiktoken_len(text):
     tokenizer = tiktoken.get_encoding("cl100k_base")
